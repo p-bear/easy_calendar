@@ -34,8 +34,7 @@ class MainSate extends State<MainStatePage> {
     return secureStorage.containsKey(key: appAccessTokenKey).then((value) => {
       if (value) {
         // 켈린더 페이지 띄우기
-        // TODO: route를 통해서 띄우기
-        _showCalendarPage()
+        _navCalendarPage()
       } else {
         // 로그인 창 띄우기
         popLoginPage()
@@ -43,10 +42,8 @@ class MainSate extends State<MainStatePage> {
     });
   }
 
-  void _showCalendarPage() {
-    setState(() {
-      _body = const CalendarPage();
-    });
+  void _navCalendarPage() {
+    Navigator.popAndPushNamed(context, '/calendar');
   }
 
   void popLoginPage() async {
@@ -61,7 +58,7 @@ class MainSate extends State<MainStatePage> {
     var accessToken = Uri.parse(result).queryParameters['access_token'];
     print(accessToken);
     secureStorage.write(key: appAccessTokenKey, value: accessToken);
-    _showCalendarPage();
+    _navCalendarPage();
   }
 
   @override
@@ -96,5 +93,4 @@ class NeedLoginPage extends StatelessWidget {
       ),
     );
   }
-
 }

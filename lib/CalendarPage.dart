@@ -11,6 +11,11 @@ class CalendarPage extends StatefulWidget {
 class CalendarPageState extends State<CalendarPage> {
 
 
+
+  bool _checkToken() {
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
