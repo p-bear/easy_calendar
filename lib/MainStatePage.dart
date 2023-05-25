@@ -1,5 +1,6 @@
 
 import 'package:easy_calendar/CalendarPage.dart';
+import 'package:easy_calendar/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth/flutter_web_auth.dart';
@@ -15,10 +16,9 @@ class MainStatePage extends StatefulWidget {
 
 class MainSate extends State<MainStatePage> {
   static const secureStorage = FlutterSecureStorage();
-  static const appAccessTokenKey = 'appAccessToken';
 
   static const loginPageUrl = 'https://p-bear.duckdns.org/auth/login-page.html';
-  static const loginPageQueryParams = 'client_id=easyCalendar&redirect_uri=http://localhost:50001/auth.html';
+  static const loginPageQueryParams = 'client_id=easyCalendar&redirect_uri=$targetAddress/auth.html';
   static const callbackUrlScheme = 'localhost';
 
   Widget _body = const NeedLoginPage();

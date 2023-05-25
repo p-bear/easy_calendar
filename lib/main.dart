@@ -3,6 +3,10 @@ import 'package:easy_calendar/MainStatePage.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
+const String targetAddress = "http://localhost:50001";
+const appAccessTokenKey = 'easyCalendarAccessToken';
+const themeColor = FlexColor.aquaBlue;
+
 void main() {
   runApp(const RootPage());
 }
