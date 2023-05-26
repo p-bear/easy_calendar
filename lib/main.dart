@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 
 const String targetAddress = "http://localhost:50001";
 const appAccessTokenKey = 'easyCalendarAccessToken';
-const themeColor = FlexColor.aquaBlue;
+const FlexScheme flexScheme = FlexScheme.deepBlue;
+const FlexSchemeData themeColor = FlexColor.deepBlue;
 
 void main() {
   runApp(const RootPage());
@@ -18,7 +19,7 @@ class RootPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Easy Calendar',
-      theme: FlexThemeData.light(scheme: FlexScheme.aquaBlue),
+      theme: FlexThemeData.light(scheme: flexScheme),
       initialRoute: '/',
       routes: {
         '/': (context) => const MainStatePage(),
