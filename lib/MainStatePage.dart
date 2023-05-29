@@ -55,7 +55,6 @@ class MainSate extends State<MainStatePage> {
         callbackUrlScheme: callbackUrlScheme);
 
     var accessToken = Uri.parse(result).queryParameters['access_token'];
-    print(accessToken);
     secureStorage.write(key: appAccessTokenKey, value: accessToken);
     _navCalendarPage();
   }
@@ -87,7 +86,7 @@ class NeedLoginPage extends StatelessWidget {
                 type: GFBorderType.rect,
                 child: const Text('알림: 로그인이 필요합니다.'),
             ),
-          )
+          ),
         ],
       ),
     );

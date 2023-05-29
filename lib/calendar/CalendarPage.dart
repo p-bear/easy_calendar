@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:easy_calendar/main.dart';
 import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
@@ -10,6 +12,13 @@ class CalendarPage extends StatefulWidget {
 }
 
 class CalendarPageState extends State<CalendarPage> {
+  final Map<String, GFListTile> eventList = HashMap();
+
+  @override
+  void initState() {
+    super.initState();
+    eventList["1"] = _createEventTile(UniqueKey(), "title", "subtitle");
+  }
 
   void _toggleEventProperty() {
 
@@ -17,6 +26,32 @@ class CalendarPageState extends State<CalendarPage> {
 
   void _navigatePostTemplatePage() {
 
+  }
+
+  List<Widget> _createCalendarEvent() {
+    return eventList.values.toList();
+  }
+
+  _addCalendarEvent(String eventId, String title, String subtitle) {
+    setState(() {
+      eventList[eventId] = _createEventTile(UniqueKey(), title, subtitle);
+    });
+  }
+
+  void _deleteCalendarEvent() {
+    setState(() {
+      eventList.remove("1");
+    });
+  }
+
+  GFListTile _createEventTile(Key key, String title, String subtitle) {
+    return GFListTile(
+      key: key,
+      titleText: title,
+      subTitleText: subtitle,
+      icon: const Icon(Icons.access_time_filled),
+      color: themeColor.light.secondaryContainer,
+    );
   }
 
   @override
@@ -40,26 +75,7 @@ class CalendarPageState extends State<CalendarPage> {
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        GFListTile(
-                          titleText: '일정',
-                          subTitleText: '일정 테스트 입니다.',
-                          icon: const Icon(Icons.access_time_filled),
-                          color: themeColor.light.secondaryContainer,
-                        ),
-                        GFListTile(
-                          titleText: '일정2',
-                          subTitleText: '일정 테스트 입니다.',
-                          icon: const Icon(Icons.access_time_filled),
-                          color: themeColor.light.secondaryContainer,
-                        ),
-                        GFListTile(
-                          titleText: '일정3',
-                          subTitleText: '일정 테스트 입니다.',
-                          icon: const Icon(Icons.access_time_filled),
-                          color: themeColor.light.secondaryContainer,
-                        )
-                      ],
+                      children: _createCalendarEvent(),
                     ),
                   ),
                 ),
@@ -375,7 +391,8 @@ class CalendarPageState extends State<CalendarPage> {
                 Container(
                   margin: const EdgeInsets.fromLTRB(0, 10, 0, 20),
                   child: GFButton(
-                    onPressed: _navigatePostTemplatePage,
+                    // onPressed: _navigatePostTemplatePage,
+                    onPressed: _deleteCalendarEvent,
                     text: "일정 등록",
                     shape: GFButtonShape.pills,
                     fullWidthButton: true,
