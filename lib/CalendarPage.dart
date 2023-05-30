@@ -1,5 +1,7 @@
 import 'dart:collection';
 
+import 'package:dio/dio.dart';
+import 'package:easy_calendar/RestUtil.dart';
 import 'package:easy_calendar/main.dart';
 import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
@@ -13,11 +15,29 @@ class CalendarPage extends StatefulWidget {
 
 class CalendarPageState extends State<CalendarPage> {
   final Map<String, GFListTile> eventList = HashMap();
+  final RestUtil restUtil = RestUtil();
 
   @override
   void initState() {
     super.initState();
-    eventList["1"] = _createEventTile(UniqueKey(), "title", "subtitle");
+    _checkToken();
+    _initCalendarEvent();
+  }
+
+  void _checkToken() async {
+    try {
+      bool result = await restUtil.checkToken();
+      if (!result) {
+        _returnToMainState();
+      }
+    } on DioError {
+      _returnToMainState();
+    }
+  }
+
+  void _returnToMainState() {
+    RestUtil.secureStorage.delete(key: appAccessTokenKey);
+    Navigator.popAndPushNamed(context, "/");
   }
 
   void _toggleEventProperty() {
@@ -32,13 +52,34 @@ class CalendarPageState extends State<CalendarPage> {
     return eventList.values.toList();
   }
 
-  _addCalendarEvent(String eventId, String title, String subtitle) {
-    setState(() {
-      eventList[eventId] = _createEventTile(UniqueKey(), title, subtitle);
-    });
+  _initCalendarEvent() async {
+    String calendarId = await restUtil.getCalendarId();
+    List<dynamic> res = await restUtil.getCalendarEvents(calendarId);
+    res.sort((a, b) => _compareStartTime(a, b));
+    final targetEvents = res.sublist(0, 4);
+    for (Map<String, dynamic> event in targetEvents) {
+      Map<String, String> start = Map.from(event["start"]);
+      _addCalendarEvent(event["id"], start["dateTime"]!, event["summary"]);
+    }
   }
 
-  void _deleteCalendarEvent() {
+  int _compareStartTime(Map<String, dynamic> a, Map<String, dynamic> b) {
+    Map<String, String> aStart = Map.from(a["start"]);
+    DateTime aTime = DateTime.parse(aStart["dateTime"]!);
+    Map<String, String> bStart = Map.from(b["start"]);
+    DateTime bTime = DateTime.parse(bStart["dateTime"]!);;
+    return aTime.difference(bTime).inSeconds;
+  }
+
+  _addCalendarEvent(String eventId, String title, String subtitle) {
+    if (mounted) {
+      setState(() {
+        eventList[eventId] = _createEventTile(UniqueKey(), title, subtitle);
+      });
+    }
+  }
+
+  void _deleteCalendarEvent() async {
     setState(() {
       eventList.remove("1");
     });

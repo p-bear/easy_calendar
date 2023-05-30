@@ -1,8 +1,9 @@
-import 'package:easy_calendar/calendar/CalendarPage.dart';
+import 'package:easy_calendar/CalendarPage.dart';
 import 'package:easy_calendar/MainStatePage.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
+const String mainServerUrl = "https://p-bear.duckdns.org";
 const String targetAddress = "http://localhost:50001";
 const appAccessTokenKey = 'easyCalendarAccessToken';
 const FlexScheme flexScheme = FlexScheme.deepBlue;
