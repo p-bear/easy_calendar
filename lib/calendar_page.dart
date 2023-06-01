@@ -18,11 +18,14 @@ class CalendarPageState extends State<CalendarPage> {
   final NetworkClient networkClient = NetworkClient();
   final secureStorage = RootPage.secureStorage;
 
+  String selectedType = "";
+  TextEditingController _titleController = TextEditingController();
+  TextEditingController _summaryController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _checkAuth();
-    _initCalendarEvent();
   }
 
   void _checkAuth() async {
@@ -53,11 +56,7 @@ class CalendarPageState extends State<CalendarPage> {
 
   }
 
-  List<Widget> _createCalendarEvent() {
-    return eventList.values.toList();
-  }
-
-  _initCalendarEvent() async {
+  Future<List<Widget>> _createCalendarEvent() async {
     String calendarId = await networkClient.getCalendarId();
     List<dynamic> res = await networkClient.getCalendarEvents(calendarId);
     res.sort((a, b) => _compareStartTime(a, b));
@@ -66,6 +65,81 @@ class CalendarPageState extends State<CalendarPage> {
       Map<String, String> start = Map.from(event["start"]);
       _addCalendarEvent(event["id"], start["dateTime"]!, event["summary"]);
     }
+
+    return eventList.values.toList();
+  }
+
+  Future<List<Widget>> _createPostTemplateArea() async {
+    List<Widget> widgetList = [];
+
+    List<String> templateTypeList = await networkClient.getTemplateType();
+    selectedType = templateTypeList[0];
+
+    widgetList.add(
+        Container(
+          margin: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+          child: GFDropdown(
+            items: templateTypeList
+                .map((type) => DropdownMenuItem(child: Text(type)))
+                .toList(),
+            onChanged: (newVal) {
+              setState(() {
+                if (newVal != null) {
+                  selectedType = newVal;
+                }
+              });
+            },
+          ),
+        )
+    );
+
+    widgetList.add(
+      Wrap(
+        children: [
+          Container(
+            margin: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+            child: GFTextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "버튼 타이틀",
+              ),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+            child: TextField(
+              controller: _summaryController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: "이벤트 이름",
+              ),
+            ),
+          ),
+        ],
+      )
+    );
+
+
+    widgetList.add(Container(
+      margin: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+      child: GFButton(
+        onPressed: _postTemplate,
+        text: "일정 등록",
+        shape: GFButtonShape.pills,
+        fullWidthButton: true,
+        color: themeColor.dark.primaryContainer,
+        size: GFSize.LARGE,
+      ),
+    ));
+    return widgetList;
+  }
+
+  _postTemplate() async {
+    networkClient.postTemplate(
+        _titleController.text,
+        _summaryController.text,
+        selectedType);
   }
 
   int _compareStartTime(Map<String, dynamic> a, Map<String, dynamic> b) {
@@ -77,11 +151,7 @@ class CalendarPageState extends State<CalendarPage> {
   }
 
   _addCalendarEvent(String eventId, String title, String subtitle) {
-    if (mounted) {
-      setState(() {
-        eventList[eventId] = _createEventTile(UniqueKey(), title, subtitle);
-      });
-    }
+    eventList[eventId] = _createEventTile(UniqueKey(), title, subtitle);
   }
 
   void _deleteCalendarEvent() async {
@@ -119,9 +189,15 @@ class CalendarPageState extends State<CalendarPage> {
                     type: GFBorderType.rRect,
                     radius: const Radius.circular(10),
                     padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: _createCalendarEvent(),
+                    child: FutureBuilder(
+                      future: _createCalendarEvent(),
+                      initialData: const [Text("data loading 중")],
+                      builder: (context, snapshot) {
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: snapshot.requireData,
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -436,14 +512,23 @@ class CalendarPageState extends State<CalendarPage> {
                 ),
                 Container(
                   margin: const EdgeInsets.fromLTRB(0, 10, 0, 20),
-                  child: GFButton(
-                    // onPressed: _navigatePostTemplatePage,
-                    onPressed: _deleteCalendarEvent,
-                    text: "일정 등록",
-                    shape: GFButtonShape.pills,
-                    fullWidthButton: true,
-                    color: themeColor.dark.primaryContainer,
-                    size: GFSize.LARGE,
+                  child: GFBorder(
+                      color: themeColor.light.primary,
+                      dashedLine: const [2, 0],
+                      strokeWidth: 5,
+                      type: GFBorderType.rRect,
+                      radius: const Radius.circular(10),
+                      padding: const EdgeInsets.all(20),
+                      child: FutureBuilder(
+                        future: _createPostTemplateArea(),
+                        initialData: const [Text("data loading 중")],
+                        builder: (context, snapshot) {
+                          return Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: snapshot.requireData
+                          );
+                        },
+                      ),
                   ),
                 ),
               ],
