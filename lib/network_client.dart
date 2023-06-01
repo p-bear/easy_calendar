@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:easy_calendar/main_exception.dart';
 import 'package:flutter_web_auth/flutter_web_auth.dart';
@@ -13,10 +11,10 @@ class NetworkClient {
   static const loginPageQueryParams = 'client_id=easyCalendar&redirect_uri=$targetAddress/auth.html';
   static const callbackUrlScheme = 'localhost';
 
-  final googleAuthorizeUrl = 'https://accounts.google.com/o/oauth2/auth';
-  final googleClientId = '358875882587-1lfij93q6g80hf4fdlnkkq0bjp2lehku.apps.googleusercontent.com';
-  final googleRedirectUri = 'http://localhost:50001';
-  final scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar';
+  static const googleAuthorizeUrl = 'https://accounts.google.com/o/oauth2/auth';
+  static const googleClientId = '358875882587-1lfij93q6g80hf4fdlnkkq0bjp2lehku.apps.googleusercontent.com';
+  static const googleRedirectUri = '$targetAddress/auth.html';
+  static const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar';
 
   /*
    * authorization
@@ -28,7 +26,14 @@ class NetworkClient {
         callbackUrlScheme: callbackUrlScheme);
   }
 
-  Future<bool> oauthTokenGoogle() async {
+  Future<String> getGoogleAuthorizationCode() async {
+    final String paramString = "response_type=code&client_id=$googleClientId&state=xyz&redirect_uri=$googleRedirectUri&scope=$scope&access_type=offline&prompt=consent";
+    return await FlutterWebAuth.authenticate(
+        url: '$googleAuthorizeUrl?$paramString',
+        callbackUrlScheme: callbackUrlScheme);
+  }
+
+  Future<bool> getOauthTokenGoogle() async {
     final accessToken = await _getAccessToken();
 
     try {
@@ -40,6 +45,29 @@ class NetworkClient {
                   }
               ),
           );
+    } on DioError catch (e) {
+      throw MainException.convert(e);
+    }
+
+    return true;
+  }
+
+  Future<bool> postOauthTokenGoogle(String code) async {
+    final accessToken = await _getAccessToken();
+
+    try {
+      await Dio().post(
+        "$mainServerUrl/gateway/oauth/token/google",
+        data: {
+          "code": code,
+          "redirectUri": googleRedirectUri
+        },
+        options: Options(
+            headers: {
+              "Authorization": "Bearer $accessToken"
+            }
+        ),
+      );
     } on DioError catch (e) {
       throw MainException.convert(e);
     }

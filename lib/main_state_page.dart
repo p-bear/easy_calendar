@@ -2,7 +2,6 @@
 import 'package:easy_calendar/main.dart';
 import 'package:easy_calendar/network_client.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_web_auth/flutter_web_auth.dart';
 import 'package:getwidget/getwidget.dart';
 
 

@@ -1,6 +1,5 @@
 import 'dart:collection';
 
-import 'package:dio/dio.dart';
 import 'package:easy_calendar/main_exception.dart';
 import 'package:easy_calendar/network_client.dart';
 import 'package:easy_calendar/main.dart';
@@ -17,6 +16,7 @@ class CalendarPage extends StatefulWidget {
 class CalendarPageState extends State<CalendarPage> {
   final Map<String, GFListTile> eventList = HashMap();
   final NetworkClient networkClient = NetworkClient();
+  final secureStorage = RootPage.secureStorage;
 
   @override
   void initState() {
@@ -27,19 +27,21 @@ class CalendarPageState extends State<CalendarPage> {
 
   void _checkAuth() async {
     try {
-      await networkClient.oauthTokenGoogle();
+      await networkClient.getOauthTokenGoogle();
     } on MainException catch(e) {
-      print(e.code);
       if (e.code.startsWith("google")) {
-
+        String responseUri = await networkClient.getGoogleAuthorizationCode();
+        String? code = Uri.parse(responseUri).queryParameters['code'];
+        await networkClient.postOauthTokenGoogle(code!);
+        _returnToMainState();
         return;
       }
+      RootPage.secureStorage.delete(key: appAccessTokenKey);
       _returnToMainState();
     }
   }
 
   void _returnToMainState() {
-    RootPage.secureStorage.delete(key: appAccessTokenKey);
     Navigator.popAndPushNamed(context, "/");
   }
 
