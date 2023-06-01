@@ -144,6 +144,22 @@ class NetworkClient {
     return typeList;
   }
 
+  Future<List<dynamic>> getTemplateList() async {
+    final accessToken = await _getAccessToken();
+
+    Response<Map<String, dynamic>> response = await Dio().get(
+        "$mainServerUrl/gateway/main/api/easyCalendar/template",
+        options: Options(
+            headers: {
+              "Authorization": "Bearer $accessToken"
+            }
+        )
+    );
+
+    Map<String, dynamic>? resData = response.data;
+    return resData?["data"];
+  }
+
   Future<Map<String, dynamic>> postTemplate(String title, String summary, String type) async {
     final accessToken = await _getAccessToken();
 
