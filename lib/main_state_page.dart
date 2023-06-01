@@ -1,6 +1,6 @@
 
-import 'package:easy_calendar/RestUtil.dart';
 import 'package:easy_calendar/main.dart';
+import 'package:easy_calendar/network_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_web_auth/flutter_web_auth.dart';
 import 'package:getwidget/getwidget.dart';
@@ -14,13 +14,8 @@ class MainStatePage extends StatefulWidget {
 }
 
 class MainSate extends State<MainStatePage> {
-  static const secureStorage = RestUtil.secureStorage;
-
-  static const loginPageUrl = 'https://p-bear.duckdns.org/auth/login-page.html';
-  static const loginPageQueryParams = 'client_id=easyCalendar&redirect_uri=$targetAddress/auth.html';
-  static const callbackUrlScheme = 'localhost';
-
-  Widget _body = const NeedLoginPage();
+  final secureStorage = RootPage.secureStorage;
+  final networkClient = NetworkClient();
 
   @override
   void initState() {
@@ -46,14 +41,7 @@ class MainSate extends State<MainStatePage> {
   }
 
   void popLoginPage() async {
-    setState(() {
-      _body = const NeedLoginPage();
-    });
-
-    final result = await FlutterWebAuth.authenticate(
-        url: '$loginPageUrl?$loginPageQueryParams',
-        callbackUrlScheme: callbackUrlScheme);
-
+    final result = await networkClient.getMainAuthorizationToken();
     var accessToken = Uri.parse(result).queryParameters['access_token'];
     secureStorage.write(key: appAccessTokenKey, value: accessToken);
     _navCalendarPage();
@@ -63,7 +51,7 @@ class MainSate extends State<MainStatePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Easy Calendar'),),
-      body: _body,
+      body: const NeedLoginPage(),
     );
   }
 }

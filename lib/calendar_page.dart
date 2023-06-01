@@ -1,7 +1,8 @@
 import 'dart:collection';
 
 import 'package:dio/dio.dart';
-import 'package:easy_calendar/RestUtil.dart';
+import 'package:easy_calendar/main_exception.dart';
+import 'package:easy_calendar/network_client.dart';
 import 'package:easy_calendar/main.dart';
 import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
@@ -15,28 +16,30 @@ class CalendarPage extends StatefulWidget {
 
 class CalendarPageState extends State<CalendarPage> {
   final Map<String, GFListTile> eventList = HashMap();
-  final RestUtil restUtil = RestUtil();
+  final NetworkClient networkClient = NetworkClient();
 
   @override
   void initState() {
     super.initState();
-    _checkToken();
+    _checkAuth();
     _initCalendarEvent();
   }
 
-  void _checkToken() async {
+  void _checkAuth() async {
     try {
-      bool result = await restUtil.checkToken();
-      if (!result) {
-        _returnToMainState();
+      await networkClient.oauthTokenGoogle();
+    } on MainException catch(e) {
+      print(e.code);
+      if (e.code.startsWith("google")) {
+
+        return;
       }
-    } on DioError {
       _returnToMainState();
     }
   }
 
   void _returnToMainState() {
-    RestUtil.secureStorage.delete(key: appAccessTokenKey);
+    RootPage.secureStorage.delete(key: appAccessTokenKey);
     Navigator.popAndPushNamed(context, "/");
   }
 
@@ -53,8 +56,8 @@ class CalendarPageState extends State<CalendarPage> {
   }
 
   _initCalendarEvent() async {
-    String calendarId = await restUtil.getCalendarId();
-    List<dynamic> res = await restUtil.getCalendarEvents(calendarId);
+    String calendarId = await networkClient.getCalendarId();
+    List<dynamic> res = await networkClient.getCalendarEvents(calendarId);
     res.sort((a, b) => _compareStartTime(a, b));
     final targetEvents = res.sublist(0, 4);
     for (Map<String, dynamic> event in targetEvents) {

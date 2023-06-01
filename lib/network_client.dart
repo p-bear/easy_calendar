@@ -1,15 +1,34 @@
-import 'dart:collection';
 import 'dart:convert';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
+import 'package:easy_calendar/main_exception.dart';
+import 'package:flutter_web_auth/flutter_web_auth.dart';
 
 import 'main.dart';
 
-class RestUtil {
-  static const secureStorage = FlutterSecureStorage();
+class NetworkClient {
+  final secureStorage = RootPage.secureStorage;
 
-  Future<bool> checkToken() async {
+  static const loginPageUrl = 'https://p-bear.duckdns.org/auth/login-page.html';
+  static const loginPageQueryParams = 'client_id=easyCalendar&redirect_uri=$targetAddress/auth.html';
+  static const callbackUrlScheme = 'localhost';
+
+  final googleAuthorizeUrl = 'https://accounts.google.com/o/oauth2/auth';
+  final googleClientId = '358875882587-1lfij93q6g80hf4fdlnkkq0bjp2lehku.apps.googleusercontent.com';
+  final googleRedirectUri = 'http://localhost:50001';
+  final scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/calendar';
+
+  /*
+   * authorization
+   */
+
+  Future<String> getMainAuthorizationToken() async {
+    return await FlutterWebAuth.authenticate(
+        url: '$loginPageUrl?$loginPageQueryParams',
+        callbackUrlScheme: callbackUrlScheme);
+  }
+
+  Future<bool> oauthTokenGoogle() async {
     final accessToken = await _getAccessToken();
 
     try {
@@ -22,11 +41,15 @@ class RestUtil {
               ),
           );
     } on DioError catch (e) {
-      return false;
+      throw MainException.convert(e);
     }
 
     return true;
   }
+
+  /*
+   * easyCalendar APIs
+   */
 
   Future<String> getCalendarId() async {
     final accessToken = await _getAccessToken();
@@ -70,6 +93,10 @@ class RestUtil {
     List<dynamic> items = data["items"];
     return items;
   }
+
+  /*
+   * internal
+   */
 
   Future<String> _getAccessToken() async {
     final accessToken = await secureStorage.read(key: appAccessTokenKey);

@@ -1,7 +1,8 @@
-import 'package:easy_calendar/CalendarPage.dart';
-import 'package:easy_calendar/MainStatePage.dart';
+import 'package:easy_calendar/calendar_page.dart';
+import 'package:easy_calendar/main_state_page.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const String mainServerUrl = "https://p-bear.duckdns.org";
 const String targetAddress = "http://localhost:50001";
@@ -15,6 +16,7 @@ void main() {
 
 class RootPage extends StatelessWidget {
   const RootPage({super.key});
+  static const secureStorage = FlutterSecureStorage();
 
   @override
   Widget build(BuildContext context) {
