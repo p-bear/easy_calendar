@@ -18,14 +18,25 @@ class CalendarPageState extends State<CalendarPage> {
   final NetworkClient networkClient = NetworkClient();
   final secureStorage = RootPage.secureStorage;
 
+  String _selectedCalendarId = "";
   String selectedType = "";
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _summaryController = TextEditingController();
   List<Map<String, dynamic>> templateList = [];
   List<Widget> templateListContainers = [];
   late Future<Widget> templateFuture;
-  String selectedWeek = "";
-  String selectedWeekday = "";
+  late int _selectedTemplateId;
+  final List<String> _weekdayAllList = [
+    "월요일",
+    "화요일",
+    "수요일",
+    "목요일",
+    "금요일",
+    "토요일",
+    "일요일",
+  ];
+  String _selectedWeek = "";
+  String _selectedWeekday = "";
 
   @override
   void initState() {
@@ -40,9 +51,7 @@ class CalendarPageState extends State<CalendarPage> {
     } on MainException catch (e) {
       if (e.code.startsWith("google")) {
         String responseUri = await networkClient.getGoogleAuthorizationCode();
-        String? code = Uri
-            .parse(responseUri)
-            .queryParameters['code'];
+        String? code = Uri.parse(responseUri).queryParameters['code'];
         await networkClient.postOauthTokenGoogle(code!);
         _returnToMainState();
         return;
@@ -56,11 +65,9 @@ class CalendarPageState extends State<CalendarPage> {
     Navigator.popAndPushNamed(context, "/");
   }
 
-  void _navigatePostTemplatePage() {}
-
   Future<List<Widget>> _createCalendarEvent() async {
-    String calendarId = await networkClient.getCalendarId();
-    List<dynamic> res = await networkClient.getCalendarEvents(calendarId);
+    _selectedCalendarId = await networkClient.getCalendarId();
+    List<dynamic> res = await networkClient.getCalendarEvents(_selectedCalendarId);
     res.sort((a, b) => _compareStartTime(a, b));
     final targetEvents = res.sublist(0, 4);
     for (Map<String, dynamic> event in targetEvents) {
@@ -142,20 +149,11 @@ class CalendarPageState extends State<CalendarPage> {
     DateTime aTime = DateTime.parse(aStart["dateTime"]!);
     Map<String, String> bStart = Map.from(b["start"]);
     DateTime bTime = DateTime.parse(bStart["dateTime"]!);
-    ;
-    return aTime
-        .difference(bTime)
-        .inSeconds;
+    return aTime.difference(bTime).inSeconds;
   }
 
   _addCalendarEvent(String eventId, String title, String subtitle) {
     eventList[eventId] = _createEventTile(UniqueKey(), title, subtitle);
-  }
-
-  void _deleteCalendarEvent() async {
-    setState(() {
-      eventList.remove("1");
-    });
   }
 
   GFListTile _createEventTile(Key key, String title, String subtitle) {
@@ -206,28 +204,27 @@ class CalendarPageState extends State<CalendarPage> {
 
   _insertEventProperty(int id) {
     setState(() {
-      var selectedTemplate = templateList.firstWhere((element) {
-        if (!element.containsKey("id")) {
-          return false;
-        }
-        if (element["id"] == id) {
-          return true;
-        }
-        return false;
-      });
+      _selectedTemplateId = id;
+
+      var selectedTemplate;
       for (var element in templateList) {
-        element["selected"] = false;
+        if (element["id"] == id) {
+          selectedTemplate = element;
+          element["selected"] = true;
+        } else {
+          element["selected"] = false;
+        }
       }
-      selectedTemplate["selected"] = true;
 
       List<Widget> templateContainers = _createTemplateListContainers();
 
       templateContainers.insert(
-          templateList.indexOf(selectedTemplate) + 1, Container(
-        key: UniqueKey(),
-        margin: const EdgeInsets.all(10),
-        child: _createTemplateDetails(selectedTemplate["type"]),
-      ));
+          templateList.indexOf(selectedTemplate) + 1,
+          Container(
+            key: UniqueKey(),
+            margin: const EdgeInsets.all(10),
+            child: _createTemplateDetails(selectedTemplate["type"]),
+          ));
 
       templateFuture = Future(() {
         return Wrap(children: templateContainers);
@@ -237,12 +234,20 @@ class CalendarPageState extends State<CalendarPage> {
 
   Widget _createTemplateDetails(String type) {
     if (type == "WEEKDAY") {
+      List<Widget> currentWeekButtonList = [];
+      List<Widget> nextWeekButtonList = [];
+      for (String weekday in _weekdayAllList) {
+        currentWeekButtonList.add(_createWeekdayButton("이번주", weekday));
+        nextWeekButtonList.add(_createWeekdayButton("다음주", weekday));
+      }
+
       return SizedBox(
         width: double.infinity,
         child: GFCard(
           boxFit: BoxFit.cover,
           color: themeColor.light.secondaryContainer,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           content: Column(
             children: [
               Container(
@@ -266,78 +271,13 @@ class CalendarPageState extends State<CalendarPage> {
                                   color: themeColor.dark.primary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
-                                  decoration: TextDecoration.underline
-                              ),
+                                  decoration: TextDecoration.underline),
                             ),
                           ),
                           Container(
                             alignment: Alignment.topLeft,
                             child: Wrap(
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                      onPressed: _deleteCalendarEvent,
-                                      text: "월요일",
-                                      size: GFSize.LARGE,
-                                      color: themeColor.dark.secondaryContainer
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "화요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "수요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "목요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "금요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "토요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "일요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                              ],
+                              children: currentWeekButtonList,
                             ),
                           ),
                           Container(
@@ -349,84 +289,18 @@ class CalendarPageState extends State<CalendarPage> {
                                   color: themeColor.dark.primary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
-                                  decoration: TextDecoration.underline
-                              ),
+                                  decoration: TextDecoration.underline),
                             ),
                           ),
                           Container(
                             alignment: Alignment.topLeft,
                             child: Wrap(
-                              children: [
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                      onPressed: _deleteCalendarEvent,
-                                      text: "월요일",
-                                      size: GFSize.LARGE,
-                                      color: themeColor.dark.secondaryContainer
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "화요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "수요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "목요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "금요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "토요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                                Container(
-                                  margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                                  child: GFButton(
-                                    onPressed: _deleteCalendarEvent,
-                                    text: "일요일",
-                                    size: GFSize.LARGE,
-                                    color: themeColor.dark.secondaryContainer,
-                                  ),
-                                ),
-                              ],
+                              children: nextWeekButtonList,
                             ),
                           ),
                         ],
                       ),
-                    )
-                ),
+                    )),
               ),
               Container(
                 margin: const EdgeInsets.fromLTRB(0, 10, 0, 10),
@@ -437,7 +311,7 @@ class CalendarPageState extends State<CalendarPage> {
                     radius: const Radius.circular(20),
                     strokeWidth: 7,
                     child: Container(
-                      margin: EdgeInsets.all(15),
+                      margin: const EdgeInsets.all(15),
                       child: Column(
                         children: [
                           Container(
@@ -449,8 +323,7 @@ class CalendarPageState extends State<CalendarPage> {
                                   color: themeColor.dark.primary,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 18,
-                                  decoration: TextDecoration.underline
-                              ),
+                                  decoration: TextDecoration.underline),
                             ),
                           ),
                           Container(
@@ -459,20 +332,29 @@ class CalendarPageState extends State<CalendarPage> {
                               margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
                               child: GFButton(
                                 onPressed: () {
-                                  Future<TimeOfDay?> selectedTime = showTimePicker(context: context, initialTime: TimeOfDay.now());
-                                  selectedTime.then((value) => null);
+                                  if (_selectedWeek.isEmpty || _selectedWeekday.isEmpty) {
+                                    _showSelectWeekdayWarningAlert();
+                                    return;
+                                  }
+                                  Future<TimeOfDay?> selectedTime =
+                                      showTimePicker(
+                                          context: context,
+                                          initialTime: TimeOfDay.now());
+                                  selectedTime.then((value) => _postCalendarEvents(value));
                                 },
                                 text: "Time",
                                 size: GFSize.LARGE,
                                 color: themeColor.dark.secondaryContainer,
-                                icon: const Icon(Icons.access_time_filled, color: Colors.white,),
+                                icon: const Icon(
+                                  Icons.access_time_filled,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    )
-                ),
+                    )),
               ),
             ],
           ),
@@ -483,7 +365,107 @@ class CalendarPageState extends State<CalendarPage> {
     }
   }
 
+  Widget _createWeekdayButton(String week, String weekday) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+      child: GFButton(
+          onPressed: () {
+            _setWeekDay(week, weekday);
+          },
+          text: weekday,
+          size: GFSize.LARGE,
+          color: week == _selectedWeek && weekday == _selectedWeekday
+              ? themeColor.light.primaryContainer
+              : themeColor.dark.secondaryContainer),
+    );
+  }
 
+  _setWeekDay(String week, String weekday) {
+    _selectedWeek = week;
+    _selectedWeekday = weekday;
+    setState(() {
+      _insertEventProperty(_selectedTemplateId);
+    });
+  }
+
+  _showSelectWeekdayWarningAlert() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return GFAlert(
+          type: GFAlertType.rounded,
+          title: "경고",
+          subtitle: "요일을 선택해야 합니다.",
+          bottomBar: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GFButton(
+                  text: "확인",
+                  size: GFSize.LARGE,
+                  color: themeColor.dark.primaryContainer,
+                  onPressed: () => Navigator.of(context).pop())
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  _showPostEventSuccessAlert() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return GFAlert(
+          type: GFAlertType.rounded,
+          title: "성공",
+          subtitle: "이벤트 등록에 성공했습니다!!",
+          bottomBar: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GFButton(
+                  text: "확인",
+                  size: GFSize.LARGE,
+                  color: themeColor.dark.primaryContainer,
+                  onPressed: () {
+                    Navigator.popAndPushNamed(context, "/calendar");
+                  })
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  _postCalendarEvents(TimeOfDay? selectedTime) async {
+    if (selectedTime == null) {
+      return;
+    }
+    Map<String, dynamic> template = templateList.firstWhere((element) => element["id"] == _selectedTemplateId);
+
+    await networkClient.postCalendarEvents(
+      _selectedCalendarId,
+      template["summary"],
+      "${_calcDate(_selectedWeek, _selectedWeekday)}T${selectedTime.hour.toString().padLeft(2, '0')}:00:00+09:00",
+      "${_calcDate(_selectedWeek, _selectedWeekday)}T${(selectedTime.hour + 1).toString().padLeft(2, '0')}:00:00+09:00",);
+
+    await _showPostEventSuccessAlert();
+  }
+
+  String _calcDate(String week, String weekday) {
+    DateTime today = DateTime.now();
+    int todayWeekIndex = today.weekday == 0 ? 6 : today.weekday - 1;
+    int selectedWeekdayIndex = _weekdayAllList.indexOf(weekday);
+    int weekdayDiffer = selectedWeekdayIndex - todayWeekIndex;
+    today = today.add(Duration(days: weekdayDiffer));
+
+    if (week == "다음주") {
+      today = today.add(const Duration(days: 7));
+    }
+
+    return "${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}";
+  }
 
   @override
   Widget build(BuildContext context) {

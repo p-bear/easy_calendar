@@ -9,7 +9,8 @@ class NetworkClient {
 
   static const _loginPageUrl = 'https://p-bear.duckdns.org/auth/login-page.html';
   static const _loginPageQueryParams = 'client_id=easyCalendar&redirect_uri=$targetAddress/auth.html';
-  static const _callbackUrlScheme = 'localhost';
+  // static const _callbackUrlScheme = 'localhost';
+  static const _callbackUrlScheme = 'p-bear.duckdns.org';
 
   static const _googleAuthorizeUrl = 'https://accounts.google.com/o/oauth2/auth';
   static const _googleClientId = '358875882587-1lfij93q6g80hf4fdlnkkq0bjp2lehku.apps.googleusercontent.com';
@@ -120,6 +121,26 @@ class NetworkClient {
     Map<String, dynamic> data = resData?["data"];
     List<dynamic> items = data["items"];
     return items;
+  }
+
+  Future<Map<String, dynamic>> postCalendarEvents(String calendarId, String summary, String startTime, String endTime) async {
+    final accessToken = await _getAccessToken();
+
+    Response<Map<String, dynamic>> response = await Dio().post(
+        "$mainServerUrl/gateway/main/api/easyCalendar/calendars/$calendarId/events",
+        options: Options(
+            headers: {
+              "Authorization": "Bearer $accessToken"
+            }),
+        data: {
+          "summary": summary,
+          "startTime": startTime,
+          "endTime": endTime
+        }
+    );
+
+    Map<String, dynamic>? resData = response.data;
+    return resData?["data"];
   }
 
   Future<List<String>> getTemplateType() async {

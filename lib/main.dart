@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const String mainServerUrl = "https://p-bear.duckdns.org";
-const String targetAddress = "http://localhost:50001";
+// const String targetAddress = "http://localhost:50001";
+const String targetAddress = "https://p-bear.duckdns.org/easycal";
 const appAccessTokenKey = 'easyCalendarAccessToken';
 const FlexScheme flexScheme = FlexScheme.deepBlue;
 const FlexSchemeData themeColor = FlexColor.deepBlue;
